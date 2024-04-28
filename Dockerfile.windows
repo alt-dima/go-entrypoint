@@ -1,0 +1,15 @@
+ARG NODE_VERSION_IMAGE
+FROM golang:1.22.2-windowsservercore-ltsc2022 as build
+ARG VERSION_STRING="unknown"
+
+COPY . /go
+
+RUN cd /go && set -x; CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$VERSION_STRING" -o entrypoint.exe
+
+FROM ${DOTNET_VERSION_IMAGE}
+ADD https://aka.ms/vs/17/release/vc_redist.x64.exe /vc_redist.x64.exe
+RUN c:\vc_redist.x64.exe /install /quiet /norestart
+
+COPY --from=build /go/entrypoint.exe /entrypoint/entrypoint.exe
+
+ENTRYPOINT ["/entrypoint/entrypoint.exe"]

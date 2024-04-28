@@ -1,0 +1,55 @@
+package main
+
+import (
+	"context"
+	"os"
+	"time"
+
+	"github.com/hashicorp/vault-client-go"
+	"github.com/hashicorp/vault-client-go/schema"
+)
+
+func initVaultClient() *vault.Client {
+	// prepare a client with the given base address
+	client, err := vault.New(
+		vault.WithAddress(os.Getenv("VAULT_ADDR")),
+		vault.WithRequestTimeout(10*time.Second),
+	)
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	resp, err := client.Auth.AppRoleLogin(
+		context.Background(),
+		schema.AppRoleLoginRequest{
+			RoleId:   os.Getenv("VAULT_APPROLE_RID"),
+			SecretId: os.Getenv("VAULT_APPROLE_SID"),
+		},
+	)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	if err := client.SetToken(resp.Auth.ClientToken); err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	return client
+}
+
+func readSecretVault(client *vault.Client, secretName string) map[string]interface{} {
+
+	secretResp, err := client.Read(context.Background(), "/secret/"+secretName)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	data := secretResp.Data
+
+	return data
+}
