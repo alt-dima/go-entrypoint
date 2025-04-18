@@ -61,7 +61,10 @@ func main() {
 		sig := <-sigs
 		logger.Debug("Entrypoint got signal " + sig.String())
 		shutdownStartTime = time.Now()
-		cmd.Process.Signal(sig)
+		err := cmd.Process.Signal(sig)
+		if err != nil {
+			logger.Error("Entrypoint failed to send signal to child: " + err.Error())
+		}
 	}()
 	//log.Println("awaiting signal")
 

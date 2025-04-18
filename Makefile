@@ -32,4 +32,14 @@ build:
 
 .PHONY: dep
 dep:
-	go mod tidy
+	go mod download
+
+.PHONY: dev
+dev:
+	# binary will be $(go env GOPATH)/bin/golangci-lint
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v2.1.2
+
+
+.PHONY: lint
+lint:
+	$(shell go env GOPATH)/bin/golangci-lint run --timeout 5m

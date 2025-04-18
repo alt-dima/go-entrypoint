@@ -53,7 +53,13 @@ func readSecretsfromSource(secretsFile string, secretsJsonPath string) *map[stri
 	path := "$." + secretsJsonPath
 
 	var manifest interface{}
-	json.Unmarshal(piManifestByte, &manifest)
+	// Unmarshal the json file.
+	err = json.Unmarshal(piManifestByte, &manifest)
+	if err != nil {
+		Logger.Error("entrypoint failed to unmarshal json with secrets: " + err.Error())
+		os.Exit(1)
+	}
+	// Get the secrets from the manifest.
 	secrets, err := jsonpath.Get(path, manifest)
 	if err != nil {
 		Logger.Warn("Entrypoint failed with specified path in json: " + err.Error())

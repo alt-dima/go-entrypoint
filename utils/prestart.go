@@ -14,7 +14,10 @@ func GenerateChildEnvs() []string {
 	removeEnvVars := []string{"VAULT_APPROLE_RID", "VAULT_APPROLE_SID"}
 	var childEnvs []string
 	for _, removeEnv := range removeEnvVars {
-		os.Unsetenv(removeEnv)
+		err := os.Unsetenv(removeEnv)
+		if err != nil {
+			Logger.Error("Entrypoint failed to unset env var: " + err.Error())
+		}
 	}
 	childEnvs = os.Environ()
 
@@ -50,8 +53,14 @@ func checkCriticalSvcReady(addrToCheck string) {
 	for {
 		resp, err := http.Get(addrToCheck)
 		if err == nil {
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			_, errCoopy := io.Copy(io.Discard, resp.Body)
+			if errCoopy != nil {
+				Logger.Error("Entrypoint failed to read response body: " + err.Error())
+			}
+			errClose := resp.Body.Close()
+			if errClose != nil {
+				Logger.Error("Entrypoint failed to close response body: " + errClose.Error())
+			}
 		}
 		if err == nil && resp.StatusCode == http.StatusOK {
 			return
